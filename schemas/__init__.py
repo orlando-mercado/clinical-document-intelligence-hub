@@ -7,6 +7,14 @@ from schemas.common import (
 )
 from schemas.discharge_summary import DischargeSummary, MedicationItem
 from schemas.lab_report import LabReport, LabResultFlag, LabResultItem
+from schemas.summary_card import (
+    ExtractedDocument,
+    RecommendedAction,
+    RiskFlag,
+    RiskLevel,
+    SummarizationOutput,
+    SummaryCard,
+)
 
 __all__ = [
     "ConfidenceLevel",
@@ -19,4 +27,10 @@ __all__ = [
     "LabReport",
     "LabResultFlag",
     "LabResultItem",
+    "ExtractedDocument",
+    "RecommendedAction",
+    "RiskFlag",
+    "RiskLevel",
+    "SummarizationOutput",
+    "SummaryCard",
 ]
