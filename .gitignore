@@ -61,6 +61,11 @@ local_settings.py
 db.sqlite3
 db.sqlite3-journal
 
+# This project's runtime audit log (generated at runtime, not a checked-in
+# sample — see data/synthetic/ for the tracked sample documents).
+data/audit_log.db
+data/audit_log.db-journal
+
 # Flask stuff:
 instance/
 .webassets-cache

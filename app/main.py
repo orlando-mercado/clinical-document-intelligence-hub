@@ -17,6 +17,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import streamlit as st
 
 from schemas import ConfidenceLevel, ConfidenceMixin, ExtractedField, RiskLevel, SummaryCard
+from src.audit_log import list_runs, log_run
 from src.config import DEFAULT_MODEL
 from src.extraction import DocumentType, ExtractionError, extract
 from src.loader import UnsupportedDocumentError, load_document
@@ -130,6 +131,20 @@ def _render_summary_card(card: SummaryCard, source_filename: str) -> None:
         _render_document_fields(card.extracted_data)
 
 
+def _render_recent_runs() -> None:
+    entries = list_runs(limit=20)
+    if not entries:
+        st.caption("No runs logged yet.")
+        return
+    for entry in entries:
+        icon = RISK_ICON[RiskLevel(entry.risk_level)]
+        st.markdown(f"**#{entry.id}** {icon} {entry.source_filename}")
+        st.caption(
+            f"{DOCUMENT_TYPE_LABELS.get(entry.document_type, entry.document_type)} · "
+            f"{entry.patient_display_name or 'Unknown patient'} · {entry.logged_at[:19]}"
+        )
+
+
 def main() -> None:
     st.title("🩺 Clinical Document Intelligence Hub")
     st.caption(
@@ -175,10 +190,21 @@ def main() -> None:
         if card is not None:
             st.session_state["summary_card"] = card
             st.session_state["summary_card_filename"] = uploaded_file.name
+            try:
+                run_id = log_run(card, model=DEFAULT_MODEL)
+                st.toast(f"Logged as run #{run_id}", icon="🗒️")
+            except Exception as exc:
+                # Audit logging is a side effect, not the deliverable — a
+                # write failure shouldn't hide the summary card just computed.
+                st.warning(f"Couldn't write to the audit log: {exc}")
 
     stored_card = st.session_state.get("summary_card")
     if stored_card is not None:
         _render_summary_card(stored_card, st.session_state["summary_card_filename"])
+
+    with st.sidebar:
+        st.markdown("### Audit Log — Recent Runs")
+        _render_recent_runs()
 
 
 if __name__ == "__main__":
