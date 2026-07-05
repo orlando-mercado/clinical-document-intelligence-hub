@@ -29,9 +29,9 @@ from pydantic import BaseModel, ConfigDict, Field, computed_field
 
 from schemas.common import (
     ConfidenceLevel,
-    ConfidenceMixin,
     HIGH_CONFIDENCE_THRESHOLD,
     NEEDS_REVIEW_THRESHOLD,
+    iter_confidence_fields,
 )
 from schemas.discharge_summary import DischargeSummary
 from schemas.lab_report import LabReport
@@ -75,21 +75,6 @@ class SummarizationOutput(BaseModel):
     recommended_actions: list[RecommendedAction]
 
 
-def _confidence_nodes(extracted_data: DischargeSummary | LabReport) -> list[tuple[str, ConfidenceMixin]]:
-    """Walk an extracted document's fields (and list-of-item fields),
-    collecting every ConfidenceMixin-derived node with its field path."""
-    nodes: list[tuple[str, ConfidenceMixin]] = []
-    for field_name in type(extracted_data).model_fields:
-        value = getattr(extracted_data, field_name)
-        if isinstance(value, ConfidenceMixin):
-            nodes.append((field_name, value))
-        elif isinstance(value, list):
-            for i, item in enumerate(value):
-                if isinstance(item, ConfidenceMixin):
-                    nodes.append((f"{field_name}[{i}]", item))
-    return nodes
-
-
 class SummaryCard(BaseModel):
     """Final pipeline output: plain-language summary + risk flag +
     recommended next steps + the underlying extracted data, ready for the
@@ -124,7 +109,7 @@ class SummaryCard(BaseModel):
     @computed_field  # type: ignore[misc]
     @property
     def overall_confidence(self) -> float:
-        nodes = _confidence_nodes(self.extracted_data)
+        nodes = iter_confidence_fields(self.extracted_data)
         if not nodes:
             return 0.0
         return sum(node.confidence for _, node in nodes) / len(nodes)
@@ -144,7 +129,7 @@ class SummaryCard(BaseModel):
     def fields_needing_review(self) -> list[str]:
         return [
             path
-            for path, node in _confidence_nodes(self.extracted_data)
+            for path, node in iter_confidence_fields(self.extracted_data)
             if node.confidence_level != ConfidenceLevel.HIGH
         ]
 

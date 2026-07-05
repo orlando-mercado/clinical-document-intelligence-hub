@@ -26,9 +26,25 @@ class ConfidenceLevel(str, Enum):
     LOW = "low"
 
 
+def _confidence_level_for(confidence: float, source_citation: Optional[str]) -> ConfidenceLevel:
+    if not source_citation or not source_citation.strip():
+        return ConfidenceLevel.LOW
+    if confidence >= HIGH_CONFIDENCE_THRESHOLD:
+        return ConfidenceLevel.HIGH
+    if confidence >= NEEDS_REVIEW_THRESHOLD:
+        return ConfidenceLevel.NEEDS_REVIEW
+    return ConfidenceLevel.LOW
+
+
 class ConfidenceMixin(BaseModel):
     """Adds confidence + source-grounding to any extracted fact."""
 
+    # Deliberately NOT validate_assignment=True: the "after" validator below
+    # sets self.confidence_level directly, and under validate_assignment that
+    # assignment re-triggers full model validation, which re-enters the same
+    # validator — infinite recursion. Post-construction correction (see
+    # clear_ungrounded_citation) is done as a plain, un-validated attribute
+    # write instead.
     model_config = ConfigDict(extra="forbid")
 
     confidence: float = Field(
@@ -46,15 +62,17 @@ class ConfidenceMixin(BaseModel):
 
     @model_validator(mode="after")
     def _derive_confidence_level(self) -> "ConfidenceMixin":
-        if not self.source_citation or not self.source_citation.strip():
-            self.confidence_level = ConfidenceLevel.LOW
-        elif self.confidence >= HIGH_CONFIDENCE_THRESHOLD:
-            self.confidence_level = ConfidenceLevel.HIGH
-        elif self.confidence >= NEEDS_REVIEW_THRESHOLD:
-            self.confidence_level = ConfidenceLevel.NEEDS_REVIEW
-        else:
-            self.confidence_level = ConfidenceLevel.LOW
+        self.confidence_level = _confidence_level_for(self.confidence, self.source_citation)
         return self
+
+    def clear_ungrounded_citation(self) -> None:
+        """Call when a claimed source_citation turns out not to be a verbatim
+        substring of the source document (see src/extraction.py). Clears the
+        citation and recomputes confidence_level to match — always LOW, since
+        a field with no citation is never trusted regardless of its
+        confidence score."""
+        self.source_citation = None
+        self.confidence_level = _confidence_level_for(self.confidence, self.source_citation)
 
 
 T = TypeVar("T")
@@ -71,3 +89,20 @@ class ExtractedField(ConfidenceMixin, Generic[T]):
     """
 
     value: Optional[T] = None
+
+
+def iter_confidence_fields(model: BaseModel) -> list[tuple[str, ConfidenceMixin]]:
+    """Walk a document model's top-level fields and list-of-item fields,
+    collecting every ConfidenceMixin-derived node with a human-readable field
+    path (e.g. "results[1]"). Shared by schemas.summary_card (to aggregate
+    document-level confidence) and src.extraction (to verify grounding)."""
+    nodes: list[tuple[str, ConfidenceMixin]] = []
+    for field_name in type(model).model_fields:
+        value = getattr(model, field_name)
+        if isinstance(value, ConfidenceMixin):
+            nodes.append((field_name, value))
+        elif isinstance(value, list):
+            for i, item in enumerate(value):
+                if isinstance(item, ConfidenceMixin):
+                    nodes.append((f"{field_name}[{i}]", item))
+    return nodes

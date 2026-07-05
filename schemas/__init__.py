@@ -4,6 +4,7 @@ from schemas.common import (
     ExtractedField,
     HIGH_CONFIDENCE_THRESHOLD,
     NEEDS_REVIEW_THRESHOLD,
+    iter_confidence_fields,
 )
 from schemas.discharge_summary import DischargeSummary, MedicationItem
 from schemas.lab_report import LabReport, LabResultFlag, LabResultItem
@@ -22,6 +23,7 @@ __all__ = [
     "ExtractedField",
     "HIGH_CONFIDENCE_THRESHOLD",
     "NEEDS_REVIEW_THRESHOLD",
+    "iter_confidence_fields",
     "DischargeSummary",
     "MedicationItem",
     "LabReport",
