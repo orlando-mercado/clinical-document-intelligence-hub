@@ -1,9 +1,11 @@
-import anthropic
 import pytest
 
 from schemas import ConfidenceLevel, DischargeSummary
 from src.extraction import ExtractionError, extract, is_verbatim_citation
 from src.loader import LoadedDocument
+from tests.fakes import FakeAPIError as _FakeAPIError
+from tests.fakes import FakeClient as _FakeClient
+from tests.fakes import FakeResponse as _FakeResponse
 
 SAMPLE_TEXT = (
     "Patient Name: Jane Doe\n"
@@ -31,43 +33,6 @@ def _valid_discharge_summary_data() -> dict:
         "follow_up_instructions": {"value": None, "confidence": 0.0, "source_citation": None},
         "follow_up_appointments": {"value": [], "confidence": 0.0, "source_citation": None},
     }
-
-
-class _FakeAPIError(anthropic.APIError):
-    """A minimal, constructible stand-in — the real APIError requires a live
-    httpx request/response we don't want to build just to test retry logic."""
-
-    def __init__(self, message: str = "fake api error"):
-        self._message = message
-
-    def __str__(self) -> str:
-        return self._message
-
-
-class _FakeResponse:
-    def __init__(self, parsed_output=None, stop_reason: str = "end_turn"):
-        self.parsed_output = parsed_output
-        self.stop_reason = stop_reason
-
-
-class _FakeMessages:
-    def __init__(self, items):
-        self._items = list(items)
-        self.calls = 0
-        self.last_kwargs: dict | None = None
-
-    def parse(self, **kwargs):
-        self.last_kwargs = kwargs
-        item = self._items[self.calls]
-        self.calls += 1
-        if isinstance(item, Exception):
-            raise item
-        return item
-
-
-class _FakeClient:
-    def __init__(self, items):
-        self.messages = _FakeMessages(items)
 
 
 def test_is_verbatim_citation_tolerates_column_whitespace():
