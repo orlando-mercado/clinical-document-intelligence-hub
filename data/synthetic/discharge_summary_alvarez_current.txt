@@ -1,0 +1,48 @@
+RIVERSIDE GENERAL HOSPITAL
+DISCHARGE SUMMARY
+
+Patient Name: Maria Alvarez
+Date of Birth: 03/22/1958
+Medical Record Number: MRN-004821
+
+Admission Date: 06/28/2026
+Discharge Date: 07/02/2026
+
+Admitting Diagnosis: Acute exacerbation of chronic obstructive pulmonary disease (COPD)
+
+Discharge Diagnosis:
+1. COPD exacerbation, resolved
+2. Community-acquired pneumonia, resolving
+
+Hospital Course:
+Ms. Alvarez, a 68-year-old female with a history of COPD (GOLD stage III) and hypertension,
+presented to the Emergency Department with three days of worsening shortness of breath,
+productive cough, and low-grade fever. Chest X-ray on admission revealed a right lower lobe
+infiltrate consistent with pneumonia. Arterial blood gas showed mild hypoxemia and compensated
+respiratory acidosis. She was started on IV corticosteroids, nebulized bronchodilators, and
+empiric antibiotics, with clinical improvement over the following four days. She was weaned to
+room air by hospital day 3 and remained stable through discharge.
+
+Procedures Performed:
+- Chest X-ray (06/28/2026)
+- Arterial blood gas (06/28/2026)
+
+Discharge Medications:
+- Prednisone 40 mg PO once daily x 5 days
+- Azithromycin 500 mg PO on day 1, then 250 mg PO once daily on days 2-5
+- Albuterol/Ipratropium nebulizer solution, one vial via nebulizer every 4 hours as needed for
+  shortness of breath
+
+Allergies: Sulfa drugs (rash)
+
+Discharge Condition: Improved, ambulating without difficulty, oxygen saturation 96% on room air.
+
+Follow-Up Instructions:
+Patient should follow up with Pulmonology within 1 week of discharge for COPD management.
+Patient should also follow up with her primary care physician within 2 weeks. This is the
+patient's second hospitalization for COPD exacerbation in the past 4 months; escalation of
+maintenance therapy should be discussed at the pulmonology visit.
+
+Follow-Up Appointments:
+- Pulmonology, Dr. Nathaniel Cho — 07/09/2026
+- Primary Care, Dr. Priya Ramesh — 07/16/2026

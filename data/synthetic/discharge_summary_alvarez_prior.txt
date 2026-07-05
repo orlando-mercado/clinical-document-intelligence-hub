@@ -1,0 +1,39 @@
+RIVERSIDE GENERAL HOSPITAL
+DISCHARGE SUMMARY
+
+Patient Name: Maria Alvarez
+Date of Birth: 03/22/1958
+Medical Record Number: MRN-004821
+
+Admission Date: 03/10/2026
+Discharge Date: 03/14/2026
+
+Admitting Diagnosis: Acute exacerbation of chronic obstructive pulmonary disease (COPD)
+
+Discharge Diagnosis:
+1. COPD exacerbation, resolved
+
+Hospital Course:
+Ms. Alvarez, a 68-year-old female with a history of COPD (GOLD stage III) and hypertension,
+presented with two days of increased dyspnea and wheezing following an upper respiratory
+infection. Chest X-ray showed no acute infiltrate. She was treated with IV corticosteroids and
+nebulized bronchodilators with steady improvement and was discharged on hospital day 4.
+
+Procedures Performed:
+- Chest X-ray (03/10/2026)
+
+Discharge Medications:
+- Prednisone 40 mg PO once daily x 5 days
+- Albuterol nebulizer solution, one vial via nebulizer every 4 hours as needed for shortness of
+  breath
+
+Allergies: Sulfa drugs (rash)
+
+Discharge Condition: Improved, ambulating without difficulty, oxygen saturation 95% on room air.
+
+Follow-Up Instructions:
+Patient should follow up with her primary care physician within 2 weeks for routine COPD
+management.
+
+Follow-Up Appointments:
+- Primary Care, Dr. Priya Ramesh — 03/28/2026

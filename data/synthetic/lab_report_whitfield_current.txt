@@ -1,0 +1,25 @@
+RIVERSIDE GENERAL HOSPITAL LABORATORY
+LABORATORY REPORT
+
+Patient Name: James Whitfield
+Date of Birth: 11/05/1965
+Medical Record Number: MRN-117734
+
+Specimen Collected: 07/03/2026 06:45
+Ordering Provider: Dr. Aisha Bello, Nephrology
+
+Test Panel: Comprehensive Metabolic Panel (CMP)
+
+Results:
+Sodium               138 mmol/L        (Reference: 136-145)          Normal
+Potassium            6.2 mmol/L        (Reference: 3.5-5.0)          HIGH — CRITICAL
+Chloride             101 mmol/L        (Reference: 98-107)           Normal
+CO2                  22 mmol/L         (Reference: 23-29)            LOW
+BUN                  48 mg/dL          (Reference: 7-20)             HIGH
+Creatinine           2.1 mg/dL         (Reference: 0.6-1.3)          HIGH
+eGFR                 32 mL/min/1.73m2  (Reference: >60)              LOW
+Glucose              104 mg/dL         (Reference: 70-100)           HIGH
+Calcium              9.1 mg/dL         (Reference: 8.6-10.2)         Normal
+
+Impression: Critical hyperkalemia with acute-on-chronic kidney injury. Ordering provider
+notified by phone at 07:10 for immediate clinical correlation.
