@@ -16,12 +16,14 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import streamlit as st
 
-from schemas import ComparisonCard, ConfidenceLevel, ConfidenceMixin, ExtractedField, RiskLevel, SummaryCard, Trend
+from schemas import ComparisonCard, ConfidenceLevel, ConfidenceMixin, RiskLevel, SummaryCard, Trend
 from src.audit_log import get_run, list_runs, log_run
 from src.comparison import ComparisonError, compare
 from src.config import DEFAULT_MODEL
 from src.extraction import DocumentType, ExtractionError, extract
+from src.formatting import iter_field_rows
 from src.loader import UnsupportedDocumentError, load_document
+from src.pdf_export import render_summary_card_pdf
 from src.summarization import SummarizationError, summarize
 
 st.set_page_config(page_title="Clinical Document Intelligence Hub", page_icon="🩺", layout="wide")
@@ -60,30 +62,10 @@ def _run_pipeline(raw_bytes: bytes, filename: str, document_type: DocumentType) 
     return summarize(extracted, source_filename=filename)
 
 
-def _describe_item(item: ConfidenceMixin) -> str:
-    """Short label for a MedicationItem / LabResultItem row."""
-    if hasattr(item, "test_name"):  # LabResultItem
-        parts = [item.test_name]
-        if item.value:
-            parts.append(str(item.value))
-        if item.unit:
-            parts.append(item.unit)
-        if item.reference_range:
-            parts.append(f"(ref: {item.reference_range})")
-        if getattr(item, "flag", None) is not None and item.flag.value != "unknown":
-            parts.append(f"[{item.flag.value.upper()}]")
-        return " ".join(parts)
-    if hasattr(item, "name"):  # MedicationItem
-        parts = [item.name]
-        for attr in ("dosage", "frequency", "route"):
-            value = getattr(item, attr, None)
-            if value:
-                parts.append(value)
-        return " ".join(parts)
-    return str(item)
-
-
-def _render_confidence_row(label: str, display_value, node: ConfidenceMixin) -> None:
+def _render_confidence_row(label: str, display_value, node: ConfidenceMixin | None) -> None:
+    if node is None:
+        st.markdown(f"⚪ **{label}**: {display_value}")
+        return
     icon = CONFIDENCE_ICON[node.confidence_level]
     if isinstance(display_value, list):
         display_value = ", ".join(str(v) for v in display_value) if display_value else None
@@ -94,20 +76,8 @@ def _render_confidence_row(label: str, display_value, node: ConfidenceMixin) -> 
 
 
 def _render_document_fields(extracted) -> None:
-    for field_name in type(extracted).model_fields:
-        if field_name == "document_type":
-            continue
-        value = getattr(extracted, field_name)
-        label = field_name.replace("_", " ").title()
-
-        if isinstance(value, ExtractedField):
-            _render_confidence_row(label, value.value, value)
-        elif isinstance(value, list) and value and isinstance(value[0], ConfidenceMixin):
-            st.markdown(f"**{label}**")
-            for item in value:
-                _render_confidence_row(_describe_item(item), None, item)
-        elif isinstance(value, list):
-            st.markdown(f"**{label}:** " + (", ".join(str(v) for v in value) if value else "_None documented_"))
+    for label, display_value, node in iter_field_rows(extracted):
+        _render_confidence_row(label, display_value, node)
 
 
 def _render_summary_card(card: SummaryCard, source_filename: str) -> None:
@@ -282,6 +252,12 @@ def main() -> None:
     stored_card = st.session_state.get("summary_card")
     if stored_card is not None:
         _render_summary_card(stored_card, st.session_state["summary_card_filename"])
+        st.download_button(
+            "Download PDF summary",
+            data=render_summary_card_pdf(stored_card),
+            file_name=f"{Path(stored_card.source_filename).stem}_summary.pdf",
+            mime="application/pdf",
+        )
         _render_comparison_section(stored_card)
 
     with st.sidebar:
