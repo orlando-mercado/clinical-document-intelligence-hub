@@ -6,6 +6,7 @@ from schemas.common import (
     NEEDS_REVIEW_THRESHOLD,
     iter_confidence_fields,
 )
+from schemas.comparison import ComparisonCard, ComparisonOutput, KeyChange, Trend
 from schemas.discharge_summary import DischargeSummary, MedicationItem
 from schemas.lab_report import LabReport, LabResultFlag, LabResultItem
 from schemas.summary_card import (
@@ -24,6 +25,10 @@ __all__ = [
     "HIGH_CONFIDENCE_THRESHOLD",
     "NEEDS_REVIEW_THRESHOLD",
     "iter_confidence_fields",
+    "ComparisonCard",
+    "ComparisonOutput",
+    "KeyChange",
+    "Trend",
     "DischargeSummary",
     "MedicationItem",
     "LabReport",

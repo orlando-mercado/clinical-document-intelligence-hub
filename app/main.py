@@ -16,8 +16,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import streamlit as st
 
-from schemas import ConfidenceLevel, ConfidenceMixin, ExtractedField, RiskLevel, SummaryCard
-from src.audit_log import list_runs, log_run
+from schemas import ComparisonCard, ConfidenceLevel, ConfidenceMixin, ExtractedField, RiskLevel, SummaryCard, Trend
+from src.audit_log import get_run, list_runs, log_run
+from src.comparison import ComparisonError, compare
 from src.config import DEFAULT_MODEL
 from src.extraction import DocumentType, ExtractionError, extract
 from src.loader import UnsupportedDocumentError, load_document
@@ -37,6 +38,14 @@ RISK_ICON = {
     RiskLevel.MODERATE: "🟡",
     RiskLevel.HIGH: "🟠",
     RiskLevel.CRITICAL: "🔴",
+}
+
+TREND_ICON = {
+    Trend.IMPROVING: "📈🟢",
+    Trend.STABLE: "🔵",
+    Trend.WORSENING: "📉🔴",
+    Trend.MIXED: "🟡",
+    Trend.NOT_COMPARABLE: "⚪",
 }
 
 DOCUMENT_TYPE_LABELS: dict[DocumentType, str] = {
@@ -131,6 +140,29 @@ def _render_summary_card(card: SummaryCard, source_filename: str) -> None:
         _render_document_fields(card.extracted_data)
 
 
+def _render_comparison_card(card: ComparisonCard) -> None:
+    st.subheader(
+        f"Comparison — {card.patient_display_name or 'Unknown patient'} "
+        f"({DOCUMENT_TYPE_LABELS.get(card.document_type, card.document_type)})"
+    )
+    st.caption(f"Current: {card.current_filename}  ·  Prior: {card.prior_filename}")
+
+    st.markdown(f"### {TREND_ICON[card.trend]} Trend: {card.trend.value.replace('_', ' ').title()}")
+
+    risk = card.risk_flag
+    st.markdown(f"**{RISK_ICON[risk.level]} Trajectory Risk: {risk.level.value.title()}**")
+    st.write(risk.rationale)
+
+    st.markdown("#### What Changed")
+    st.write(card.narrative)
+
+    if card.key_changes:
+        st.markdown("#### Key Changes")
+        for change in card.key_changes:
+            st.markdown(f"- **{change.field}:** {change.prior_value} → {change.current_value}")
+            st.caption(change.significance)
+
+
 def _render_recent_runs() -> None:
     entries = list_runs(limit=20)
     if not entries:
@@ -143,6 +175,52 @@ def _render_recent_runs() -> None:
             f"{DOCUMENT_TYPE_LABELS.get(entry.document_type, entry.document_type)} · "
             f"{entry.patient_display_name or 'Unknown patient'} · {entry.logged_at[:19]}"
         )
+
+
+def _render_comparison_section(current_card: SummaryCard) -> None:
+    current_run_id = st.session_state.get("summary_card_run_id")
+    candidates = [
+        entry
+        for entry in list_runs(limit=50)
+        if entry.document_type == current_card.document_type and entry.id != current_run_id
+    ]
+
+    with st.expander("Compare with a prior visit", expanded=False):
+        if not candidates:
+            st.caption(
+                f"No other logged {DOCUMENT_TYPE_LABELS.get(current_card.document_type, current_card.document_type)} "
+                "runs to compare against yet — process another one first."
+            )
+            return
+
+        options = {
+            f"#{e.id} — {e.source_filename} ({e.patient_display_name or 'unknown patient'}, {e.logged_at[:19]})": e.id
+            for e in candidates
+        }
+        selected_label = st.selectbox("Prior run", list(options.keys()), key="comparison_prior_choice")
+
+        if st.button("Compare", key="compare_button"):
+            prior_card = get_run(options[selected_label])
+            if prior_card is None:
+                st.error("That run could no longer be found in the audit log.")
+            else:
+                with st.spinner(f"Comparing with {DEFAULT_MODEL}…"):
+                    try:
+                        comparison_card = compare(
+                            current_card.extracted_data,
+                            prior_card.extracted_data,
+                            current_filename=current_card.source_filename,
+                            prior_filename=prior_card.source_filename,
+                        )
+                        st.session_state["comparison_card"] = comparison_card
+                    except ComparisonError as exc:
+                        st.error(f"Comparison failed: {exc}")
+                    except Exception as exc:
+                        st.error(f"Unexpected error while comparing: {exc}")
+
+        comparison_card = st.session_state.get("comparison_card")
+        if comparison_card is not None:
+            _render_comparison_card(comparison_card)
 
 
 def main() -> None:
@@ -190,8 +268,11 @@ def main() -> None:
         if card is not None:
             st.session_state["summary_card"] = card
             st.session_state["summary_card_filename"] = uploaded_file.name
+            st.session_state["summary_card_run_id"] = None
+            st.session_state.pop("comparison_card", None)
             try:
                 run_id = log_run(card, model=DEFAULT_MODEL)
+                st.session_state["summary_card_run_id"] = run_id
                 st.toast(f"Logged as run #{run_id}", icon="🗒️")
             except Exception as exc:
                 # Audit logging is a side effect, not the deliverable — a
@@ -201,6 +282,7 @@ def main() -> None:
     stored_card = st.session_state.get("summary_card")
     if stored_card is not None:
         _render_summary_card(stored_card, st.session_state["summary_card_filename"])
+        _render_comparison_section(stored_card)
 
     with st.sidebar:
         st.markdown("### Audit Log — Recent Runs")
