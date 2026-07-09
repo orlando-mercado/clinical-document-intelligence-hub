@@ -21,7 +21,7 @@ from src.audit_log import get_run, list_runs, log_run
 from src.comparison import ComparisonError, compare
 from src.config import DEFAULT_MODEL
 from src.extraction import DocumentType, ExtractionError, extract
-from src.formatting import iter_field_rows
+from src.formatting import NO_SEPARATE_VALUE, iter_field_rows
 from src.loader import UnsupportedDocumentError, load_document
 from src.pdf_export import render_summary_card_pdf
 from src.summarization import SummarizationError, summarize
@@ -67,9 +67,14 @@ def _render_confidence_row(label: str, display_value, node: ConfidenceMixin | No
         st.markdown(f"⚪ **{label}**: {display_value}")
         return
     icon = CONFIDENCE_ICON[node.confidence_level]
-    if isinstance(display_value, list):
-        display_value = ", ".join(str(v) for v in display_value) if display_value else None
-    text = f"{icon} **{label}**: " + (str(display_value) if display_value not in (None, "") else "_not found_")
+    if display_value is NO_SEPARATE_VALUE:
+        # The label already carries the value (a MedicationItem/LabResultItem
+        # description) — nothing separate to show, and NOT "not found".
+        text = f"{icon} **{label}**"
+    else:
+        if isinstance(display_value, list):
+            display_value = ", ".join(str(v) for v in display_value) if display_value else None
+        text = f"{icon} **{label}**: " + (str(display_value) if display_value not in (None, "") else "_not found_")
     st.markdown(text)
     citation = f"“{node.source_citation}”" if node.source_citation else "_no source citation_"
     st.caption(f"{citation} — confidence {node.confidence:.2f}")

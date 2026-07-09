@@ -27,7 +27,7 @@ from reportlab.platypus import (
 )
 
 from schemas import ConfidenceLevel, RiskLevel, SummaryCard
-from src.formatting import iter_field_rows
+from src.formatting import NO_SEPARATE_VALUE, iter_field_rows
 
 RISK_COLOR = {
     RiskLevel.NONE: colors.grey,
@@ -132,9 +132,14 @@ def render_summary_card_pdf(card: SummaryCard) -> bytes:
     story.append(Paragraph("Extracted Fields (Source-Grounded)", h2_style))
     table_data = [["Field", "Value", "Confidence", "Source Citation"]]
     for label, display_value, node in iter_field_rows(card.extracted_data):
-        if isinstance(display_value, list):
-            display_value = ", ".join(str(v) for v in display_value) if display_value else None
-        value_text = str(display_value) if display_value not in (None, "") else "not found"
+        if display_value is NO_SEPARATE_VALUE:
+            # The label already carries the value — nothing separate to show,
+            # and NOT "not found".
+            value_text = "—"
+        else:
+            if isinstance(display_value, list):
+                display_value = ", ".join(str(v) for v in display_value) if display_value else None
+            value_text = str(display_value) if display_value not in (None, "") else "not found"
 
         if node is None:
             confidence_para = Paragraph("—", caption_style)

@@ -77,6 +77,12 @@ def test_render_summary_card_pdf_contains_key_content():
     assert "Amoxicillin" in text
     assert "Follow up with PCP" in text
     assert "Dx: Pneumonia" in text  # source citation carried through
+    # The medication row's label already carries its value (name + dosage +
+    # frequency) — it must not also render as "not found" (other genuinely
+    # missing fields like date of birth legitimately do say "not found",
+    # so this checks the medication's own row, not the whole document).
+    medication_line = next(line for line in text.splitlines() if "Amoxicillin" in line)
+    assert "not found" not in medication_line
 
 
 def test_render_summary_card_pdf_handles_empty_lists_and_no_actions():

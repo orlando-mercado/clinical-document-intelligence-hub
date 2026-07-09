@@ -33,6 +33,18 @@ def describe_confidence_item(item: ConfidenceMixin) -> str:
     return str(item)
 
 
+class _NoSeparateValue:
+    """Sentinel meaning "this row's label already carries its value" (a
+    MedicationItem/LabResultItem description) — distinct from a plain
+    ExtractedField whose `.value` is genuinely `None` (not found in the
+    document). Consumers must not render both the same way."""
+
+    def __repr__(self) -> str:
+        return "NO_SEPARATE_VALUE"
+
+
+NO_SEPARATE_VALUE = _NoSeparateValue()
+
 FieldRow = tuple[str, object, Optional[ConfidenceMixin]]
 
 
@@ -41,10 +53,12 @@ def iter_field_rows(extracted: Union[DischargeSummary, LabReport]) -> list[Field
     rows, handling all three field shapes present in the schemas:
 
     - ExtractedField[...] — names, dates, diagnoses, or a list of plain
-      strings (e.g. procedures_performed); display_value is `.value`.
+      strings (e.g. procedures_performed); display_value is `.value`, which
+      may legitimately be None/empty if the field wasn't found.
     - non-empty list[MedicationItem | LabResultItem] — one row per item,
-      labeled "<field> — <item description>"; display_value is None since
-      the description already carries it.
+      labeled "<field> — <item description>"; display_value is
+      NO_SEPARATE_VALUE since the description already carries it — this is
+      NOT "not found".
     - empty list[MedicationItem | LabResultItem] — one "None documented" row
       with node=None (nothing to grade).
 
@@ -62,7 +76,7 @@ def iter_field_rows(extracted: Union[DischargeSummary, LabReport]) -> list[Field
             rows.append((label, value.value, value))
         elif isinstance(value, list) and value and isinstance(value[0], ConfidenceMixin):
             for item in value:
-                rows.append((f"{label} — {describe_confidence_item(item)}", None, item))
+                rows.append((f"{label} — {describe_confidence_item(item)}", NO_SEPARATE_VALUE, item))
         elif isinstance(value, list):
             rows.append((label, "None documented", None))
     return rows
